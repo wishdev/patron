@@ -70,6 +70,9 @@ module Patron
     # only be set if buffer_size is non-nil
     attr_accessor :buffer_size
 
+    # Verbose debugging data
+    attr_accessor :verbose_debug
+
     private :ext_initialize, :handle_request, :enable_cookie_session, :set_debug_file
 
     # Create a new Session object.

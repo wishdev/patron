@@ -32,7 +32,7 @@ module Patron
       @headers = {}
     end
 
-    attr_reader :url, :status, :status_line, :redirect_count, :body, :headers
+    attr_reader :url, :status, :status_line, :redirect_count, :body, :headers, :debug_data
 
     def inspect
       # Avoid spamming the console with the header and body data

@@ -412,11 +412,11 @@ static VALUE perform_request(VALUE self) {
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, body_buffer);
   }
 
-  VALUE verbose_debug_data = Qnil;
+  VALUE verbose_debug_data_buffer = Qnil;
   if (rb_iv_get(self, "@verbose_debug") == Qtrue) {
-    verbose_debug_data = rb_str_buf_new(32768);
+    verbose_debug_data_buffer = rb_str_buf_new(32768);
     curl_easy_setopt(curl, CURLOPT_DEBUGFUNCTION, verbose_debug);
-    curl_easy_setopt(curl, CURLOPT_DEBUGDATA, verbose_debug_data);
+    curl_easy_setopt(curl, CURLOPT_DEBUGDATA, verbose_debug_data_buffer);
   }
 #if defined(HAVE_TBR) && defined(USE_TBR)
   CURLcode ret = rb_thread_blocking_region(curl_easy_perform, curl, RUBY_UBF_IO, 0);
@@ -429,8 +429,8 @@ static VALUE perform_request(VALUE self) {
     if (!NIL_P(body_buffer)) {
       rb_iv_set(response, "@body", body_buffer);
     }
-    if (!NIL_P(verbose_debug_data)) {
-      rb_iv_set(response, "@debug_data", verbose_debug_data);
+    if (!NIL_P(verbose_debug_data_buffer)) {
+      rb_iv_set(response, "@verbose_debug_data", verbose_debug_data_buffer);
     }
     rb_funcall(response, rb_intern("parse_headers"), 1, header_buffer);
     if (FIX2INT(rb_iv_get(self, "@flush_cookies")) == 1) {
