@@ -99,7 +99,7 @@ module Patron
         end
       end
       enable_cookie_session(path.to_s)
-      @flush_cookies = flush.nil? ? 0 : flush ? 1 : 0
+      @flush_cookies = flush ? 1 : 0
       self
     end
 
