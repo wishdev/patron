@@ -74,6 +74,11 @@ static size_t session_read_handler(char* stream, size_t size, size_t nmemb, char
   return result;
 }
 
+static int verbose_debug(CURL* curl, curl_infotype type, char * stream, size_t size, VALUE out) {
+    rb_str_buf_cat(out, stream, size);
+    return 0;
+}
+
 //------------------------------------------------------------------------------
 // Object allocation
 //
@@ -178,7 +183,7 @@ static int formadd_values(VALUE data_key, VALUE data_value, VALUE self) {
   VALUE value = rb_obj_as_string(data_value);
 
   curl_formadd(&state->post, &state->last, CURLFORM_PTRNAME, RSTRING_PTR(name),
-                CURLFORM_PTRCONTENTS, RSTRING_PTR(value), CURLFORM_END);  
+                CURLFORM_PTRCONTENTS, RSTRING_PTR(value), CURLFORM_END);
   return 0;
 }
 
@@ -190,8 +195,8 @@ static int formadd_files(VALUE data_key, VALUE data_value, VALUE self) {
   VALUE value = rb_obj_as_string(data_value);
 
   curl_formadd(&state->post, &state->last, CURLFORM_PTRNAME, RSTRING_PTR(name),
-                CURLFORM_FILE, RSTRING_PTR(value), CURLFORM_END); 
-                
+                CURLFORM_FILE, RSTRING_PTR(value), CURLFORM_END);
+
   return 0;
 }
 
@@ -275,11 +280,11 @@ static void set_options_from_request(VALUE self, VALUE request) {
         } else {   rb_raise(rb_eArgError, "Data and Filename must be passed in a hash.");}
         }
         curl_easy_setopt(curl, CURLOPT_HTTPPOST, state->post);
-        
+
       } else {
          rb_raise(rb_eArgError, "Multipart PUT not supported");
       }
-    
+
     } else {
       rb_raise(rb_eArgError, "Must provide either data or a filename when doing a PUT or POST");
     }
@@ -407,6 +412,12 @@ static VALUE perform_request(VALUE self) {
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, body_buffer);
   }
 
+  VALUE verbose_debug_data = Qnil;
+  if (rb_iv_get(self, "@verbose_debug") == Qtrue) {
+    verbose_debug_data = rb_str_buf_new(32768);
+    curl_easy_setopt(curl, CURLOPT_DEBUGFUNCTION, verbose_debug);
+    curl_easy_setopt(curl, CURLOPT_DEBUGDATA, verbose_debug_data);
+  }
 #if defined(HAVE_TBR) && defined(USE_TBR)
   CURLcode ret = rb_thread_blocking_region(curl_easy_perform, curl, RUBY_UBF_IO, 0);
 #else
@@ -417,6 +428,9 @@ static VALUE perform_request(VALUE self) {
     VALUE response = create_response(curl);
     if (!NIL_P(body_buffer)) {
       rb_iv_set(response, "@body", body_buffer);
+    }
+    if (!NIL_P(verbose_debug_data)) {
+      rb_iv_set(response, "@debug_data", verbose_debug_data);
     }
     rb_funcall(response, rb_intern("parse_headers"), 1, header_buffer);
     if (FIX2INT(rb_iv_get(self, "@flush_cookies")) == 1) {
