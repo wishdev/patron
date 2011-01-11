@@ -80,12 +80,15 @@ module Patron
       @connect_timeout = 1
       @max_redirects = 5
       @auth_type = :basic
+      @flush_cookies = 0
     end
 
     # Turn on cookie handling for this session, storing them in memory by
     # default or in +file+ if specified. The +file+ must be readable and
     # writable. Calling multiple times will add more files.
-    def handle_cookies(file = nil)
+    # Flush sets whether cookies are flushed to the cookie file after
+    # every request
+    def handle_cookies(file = nil, flush = nil)
       if file
         path = Pathname(file).expand_path
         unless File.exists?(file) and File.writable?(path.dirname)
@@ -96,6 +99,7 @@ module Patron
         end
       end
       enable_cookie_session(path.to_s)
+      @flush_cookies = flush.nil? ? 0 : flush ? 1 : 0
       self
     end
 

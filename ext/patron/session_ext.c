@@ -419,6 +419,9 @@ static VALUE perform_request(VALUE self) {
       rb_iv_set(response, "@body", body_buffer);
     }
     rb_funcall(response, rb_intern("parse_headers"), 1, header_buffer);
+    if (FIX2INT(rb_iv_get(self, "@flush_cookies")) == 1) {
+      curl_easy_setopt(curl, CURLOPT_COOKIELIST, "FLUSH");
+    }
     return response;
   } else {
     rb_raise(select_error(ret), "%s", state->error_buf);
